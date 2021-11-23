@@ -1,2 +1,5 @@
-# soci_thesis
-This repository contains all the datasets and models used in my Sociology B.A. Thesis
+# Amy Maldonado 
+## Sociology B.A. Thesis
+### The University of Chicago '22
+
+This repository contains the files for the dataset used and models produced for my Sociology B.A. Thesis.
