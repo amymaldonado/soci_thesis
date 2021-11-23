@@ -1,0 +1,32 @@
+---
+title: "Models"
+author: "Amy Maldonado"
+date: "11/23/2021"
+output: html_document
+---
+
+## Libraries
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#If you have never used R or tidyverse before make sure to install the package before loading the libraries
+#install.packages("tidyverse")
+library(tidyverse)
+library(haven)
+```
+
+## Loading the data
+
+```{r load}
+
+atp_w49<- read_sav("ATP W49.sav")
+atp_w49
+
+```
+
+## Models
+
+```{r model1}
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
