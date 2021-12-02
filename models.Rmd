@@ -1,32 +1,166 @@
 ---
-title: "Models"
+title: "Descriptive Statistics"
 author: "Amy Maldonado"
-date: "11/23/2021"
-output: html_document
+output: github_document
 ---
 
-## Libraries
-```{r setup, include=FALSE, echo=FALSE}
+## Libraries & Packages
+Install these packages and load these libraries in order to run the rest of the code.
+```{r setup, include=FALSE, echo=FALSE, warning=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-#If you have never used R or tidyverse before make sure to install the package before loading the libraries
+#If you have never used these libraries before make sure to install the packages before loading the libraries
 #install.packages("tidyverse")
+#install.packages("epiDisplay")
+#install.packages("sjPlot")
 library(tidyverse)
 library(haven)
+library(epiDisplay)
+library(dplyr)
+library(sjPlot)
 ```
 
-## Loading the data
-
+## Loading and tidying the data
+Load the data into an object (atp_w49), select and rename columns (variables) of interest, recode refused (99) as a missing value (NA). 
 ```{r load}
 
-atp_w49<- read_sav("ATP W49.sav")
-atp_w49
+atp_w49<- read_sav("ATP W49.sav")%>%
+  #selecting sociodemographic, predictor, and outcome variables 
+  dplyr::select("F_ACSWEB", "F_INCOME_RECODE", "F_PARTY_FINAL", "F_EDUCCAT", "F_AGECAT", "F_SEX", "UNDERSTANDCO_W49", "PRIVACYNEWS1_W49", "CONTROLCO_W49", "PP4_W49", "CONCERNCO_W49", "GOVREGV1_W49", "BENEFITCO_W49", "POSNEGCO_W49")%>%
+  #renaming variables
+  rename(internet= F_ACSWEB,
+         income=F_INCOME_RECODE,
+         party=F_PARTY_FINAL,
+         education=F_EDUCCAT,
+         age=F_AGECAT,
+         sex=F_SEX,
+         understand=UNDERSTANDCO_W49,
+         news=PRIVACYNEWS1_W49,
+         control=CONTROLCO_W49,
+         policy=PP4_W49,
+         concern=CONCERNCO_W49,
+         government=GOVREGV1_W49,
+         benefit=BENEFITCO_W49,
+         risk=POSNEGCO_W49)
+
+#recoding variables from 99 to NA
+atp_w49[atp_w49==99]<-NA
 
 ```
 
-## Models
+## Univariate Descriptive Statistics
+Predictor and outcome variables' frequencies in the dataset.
+```{r univariate}
 
-```{r model1}
+#predictor variables
+understand_freq<- tab1(atp_w49$understand, sort.group = "decreasing", cum.percent = TRUE, missing = FALSE)
+understand_freq
+
+news_freq<- tab1(atp_w49$news, sort.group = "decreasing", cum.percent = TRUE, missing = FALSE)
+news_freq
+
+control_freq<- tab1(atp_w49$control, sort.group = "decreasing", cum.percent = TRUE, missing = FALSE)
+control_freq
+
+policy_freq<- tab1(atp_w49$policy, sort.group = "decreasing", cum.percent = TRUE, missing = FALSE)
+policy_freq
+
+#outcome variables
+concern_freq<- tab1(atp_w49$concern, sort.group = "decreasing", cum.percent = TRUE, missing = FALSE)
+concern_freq
+
+government_freq<- tab1(atp_w49$government, sort.group = "decreasing", cum.percent = TRUE, missing = FALSE)
+government_freq
+
+benefit_freq<- tab1(atp_w49$benefit, sort.group = "decreasing", cum.percent = TRUE, missing = FALSE)
+benefit_freq
+
+risk_freq<- tab1(atp_w49$risk, sort.group = "decreasing", cum.percent = TRUE, missing = FALSE)
+risk_freq
 
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+## Bivariate Descriptive Statistics
+Relationships between the predictor and outcome variables in the dataset.
+```{r bivariate}
+
+###outcome=concern###
+
+#understand vs concern
+understand_concern <- sjPlot::tab_xtab(var.row = atp_w49$understand, var.col = atp_w49$concern, title = "Understand vs Concern", show.row.prc = TRUE)
+understand_concern
+
+#news vs concern
+news_concern <- sjPlot::tab_xtab(var.row = atp_w49$news, var.col = atp_w49$concern, title = "News vs Concern", show.row.prc = TRUE)
+news_concern
+
+#control vs concern
+control_concern <- sjPlot::tab_xtab(var.row = atp_w49$control, var.col = atp_w49$concern, title = "Control vs Concern", show.row.prc = TRUE)
+control_concern
+
+#policy vs concern
+policy_concern <- sjPlot::tab_xtab(var.row = atp_w49$policy, var.col = atp_w49$concern, title = "Policy vs Concern", show.row.prc = TRUE)
+policy_concern
+
+####outcome=government###
+
+#understand vs government
+understand_government <- sjPlot::tab_xtab(var.row = atp_w49$understand, var.col = atp_w49$government, title = "Understand vs Government", show.row.prc = TRUE)
+understand_government
+
+#news vs government
+news_government <- sjPlot::tab_xtab(var.row = atp_w49$news, var.col = atp_w49$government, title = "News vs Government", show.row.prc = TRUE)
+news_government
+
+#control vs government
+control_government <- sjPlot::tab_xtab(var.row = atp_w49$control, var.col = atp_w49$government, title = "Control vs Government", show.row.prc = TRUE)
+control_government
+
+#policy vs government
+policy_government <- sjPlot::tab_xtab(var.row = atp_w49$policy, var.col = atp_w49$government, title = "Policy vs Government", show.row.prc = TRUE)
+policy_government
+
+###outcome=benefit###
+
+#understand vs benefit
+understand_benefit <- sjPlot::tab_xtab(var.row = atp_w49$understand, var.col = atp_w49$benefit, title = "Understand vs Benefit", show.row.prc = TRUE)
+understand_benefit
+
+#news vs benefit
+news_benefit <- sjPlot::tab_xtab(var.row = atp_w49$news, var.col = atp_w49$benefit, title = "News vs Benefit", show.row.prc = TRUE)
+news_benefit
+
+#control vs benefit
+control_benefit <- sjPlot::tab_xtab(var.row = atp_w49$control, var.col = atp_w49$benefit, title = "Control vs Benefit", show.row.prc = TRUE)
+control_benefit
+
+#policy vs benefit
+policy_benefit <- sjPlot::tab_xtab(var.row = atp_w49$policy, var.col = atp_w49$benefit, title = "Policy vs Benefit", show.row.prc = TRUE)
+policy_benefit
+
+
+###outcome=risk###
+
+#understand vs risk
+understand_risk <- sjPlot::tab_xtab(var.row = atp_w49$understand, var.col = atp_w49$risk, title = "Understand vs Risk", show.row.prc = TRUE)
+understand_risk
+
+#news vs risk
+news_risk <- sjPlot::tab_xtab(var.row = atp_w49$news, var.col = atp_w49$risk, title = "News vs Risk", show.row.prc = TRUE)
+news_risk
+
+#control vs risk
+control_risk <- sjPlot::tab_xtab(var.row = atp_w49$control, var.col = atp_w49$risk, title = "Control vs Risk", show.row.prc = TRUE)
+control_risk
+
+#policy vs risk
+policy_risk <- sjPlot::tab_xtab(var.row = atp_w49$policy, var.col = atp_w49$risk, title = "Policy vs Risk", show.row.prc = TRUE)
+policy_risk
+
+```
+
+## Multivariate 
+```{r}
+
+
+
+```
