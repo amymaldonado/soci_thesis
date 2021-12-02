@@ -20,7 +20,7 @@ library(sjPlot)
 ```
 
 ## Loading and tidying the data
-Load the data into an object (atp_w49), select and rename columns (variables) of interest, recode refused (99) as a missing value (NA). 
+Load the data into an object (*atp_w49*), select and rename columns (variables) of interest, recode refused (99) as a missing value (NA). 
 ```{r load}
 
 atp_w49<- read_sav("ATP W49.sav")%>%
@@ -49,7 +49,7 @@ atp_w49[atp_w49==99]<-NA
 
 ## Univariate Descriptive Statistics
 Predictor and outcome variables' frequencies in the dataset.
-```{r univariate}
+```{r predictor univariate}
 
 #predictor variables
 understand_freq<- tab1(atp_w49$understand, sort.group = "decreasing", cum.percent = TRUE, missing = FALSE)
@@ -64,6 +64,11 @@ control_freq
 policy_freq<- tab1(atp_w49$policy, sort.group = "decreasing", cum.percent = TRUE, missing = FALSE)
 policy_freq
 
+```
+* Almost half of survey respondents said they know very little about what the companies are doing with the data they collect. (*understand*, 48.8%)
+* A little over half of survey respondents say they think they have very little control over the data companies collect about them. (*control*, 53.1%)
+
+```{r outcome univariate}
 #outcome variables
 concern_freq<- tab1(atp_w49$concern, sort.group = "decreasing", cum.percent = TRUE, missing = FALSE)
 concern_freq
@@ -78,6 +83,9 @@ risk_freq<- tab1(atp_w49$risk, sort.group = "decreasing", cum.percent = TRUE, mi
 risk_freq
 
 ```
+* The majority of respondents believe there should be more regulation of what companies can do with their customers' personal information (*government*, 77.4%)
+* Almost half of respondents said they benefit very little from the data companies collect on them (*benefit*, 49.8%)
+* The majority of respondents said that the potential risks of companies collecting data outweigh the benefits (*risk*, 83.2%).
 
 ## Bivariate Descriptive Statistics
 Relationships between the predictor and outcome variables in the dataset.
@@ -157,6 +165,7 @@ policy_risk <- sjPlot::tab_xtab(var.row = atp_w49$policy, var.col = atp_w49$risk
 policy_risk
 
 ```
+* Regardless of how much social media users *understand* or feel in *control* over what companies do with their data, follow *news* on privacy issues, or understand *privacy policies*, the majority of survey respondents believe there should be more government regulation of what companies can do with their customers' personal information (*government*) and that the potential risks of companies collecting data outweigh the benefits (*risk*).
 
 ## Multivariate 
 ```{r}
