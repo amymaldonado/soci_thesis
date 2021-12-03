@@ -17,19 +17,20 @@ library(haven)
 library(epiDisplay)
 library(dplyr)
 library(sjPlot)
+library(MASS)
+library(tidymodels)
 ```
 
 ## Loading and tidying the data
-Load the data into an object (*atp_w49*), select and rename columns (variables) of interest, recode refused (99) as a missing value (NA). 
+Load the data into an object (*atp_w49*), select and rename columns (variables) of interest, recode refused (99) as a missing value (NA), reorder all variables.  
 ```{r load}
 
 atp_w49<- read_sav("ATP W49.sav")%>%
   #selecting sociodemographic, predictor, and outcome variables 
-  dplyr::select("F_ACSWEB", "F_INCOME_RECODE", "F_PARTY_FINAL", "F_EDUCCAT", "F_AGECAT", "F_SEX", "UNDERSTANDCO_W49", "PRIVACYNEWS1_W49", "CONTROLCO_W49", "PP4_W49", "CONCERNCO_W49", "GOVREGV1_W49", "BENEFITCO_W49", "POSNEGCO_W49")%>%
+  dplyr::select("F_ACSWEB", "F_INCOME_RECODE", "F_EDUCCAT", "F_AGECAT", "F_SEX", "UNDERSTANDCO_W49", "PRIVACYNEWS1_W49", "CONTROLCO_W49", "PP4_W49", "CONCERNCO_W49", "GOVREGV1_W49", "BENEFITCO_W49", "POSNEGCO_W49")%>%
   #renaming variables
   rename(internet= F_ACSWEB,
          income=F_INCOME_RECODE,
-         party=F_PARTY_FINAL,
          education=F_EDUCCAT,
          age=F_AGECAT,
          sex=F_SEX,
@@ -44,6 +45,26 @@ atp_w49<- read_sav("ATP W49.sav")%>%
 
 #recoding variables from 99 to NA
 atp_w49[atp_w49==99]<-NA
+atp_w49
+
+#predictor/independent
+atp_w49$understand <- as.ordered(atp_w49$understand)
+atp_w49$news <- as.ordered(atp_w49$news)
+atp_w49$control <- as.ordered(atp_w49$control)
+atp_w49$policy <- as.ordered(atp_w49$policy)
+
+#outcome/dependent
+atp_w49$government <- as.ordered(atp_w49$government)
+atp_w49$benefit <- as.ordered(atp_w49$benefit)
+atp_w49$risk <- as.ordered(atp_w49$risk) #bi
+atp_w49$concern <- as.ordered(atp_w49$concern)
+
+#covariates
+atp_w49$age <- as.ordered(atp_w49$age)
+atp_w49$sex <- as.ordered(atp_w49$sex) #bi
+atp_w49$income <- as.ordered(atp_w49$income)
+atp_w49$education <- as.ordered(atp_w49$education)
+atp_w49$internet <- as.ordered(atp_w49$internet) #bi
 
 ```
 
@@ -83,13 +104,28 @@ risk_freq<- tab1(atp_w49$risk, sort.group = "decreasing", cum.percent = TRUE, mi
 risk_freq
 
 ```
+```{r covariate univariate}
+#covariates
+age_freq<- tab1(atp_w49$age, sort.group = "decreasing", cum.percent = TRUE, missing = FALSE)
+age_freq
+
+sex_freq<- tab1(atp_w49$sex, sort.group = "decreasing", cum.percent = TRUE, missing = FALSE)
+sex_freq
+
+income_freq<- tab1(atp_w49$income, sort.group = "decreasing", cum.percent = TRUE, missing = FALSE)
+income_freq
+
+education_freq<- tab1(atp_w49$education, sort.group = "decreasing", cum.percent = TRUE, missing = FALSE)
+education_freq
+
+```
 * The majority of respondents believe there should be more regulation of what companies can do with their customers' personal information (*government*, 77.4%)
 * Almost half of respondents said they benefit very little from the data companies collect on them (*benefit*, 49.8%)
 * The majority of respondents said that the potential risks of companies collecting data outweigh the benefits (*risk*, 83.2%).
 
 ## Bivariate Descriptive Statistics
 Relationships between the predictor and outcome variables in the dataset.
-```{r bivariate}
+```{r concern bivariate}
 
 ###outcome=concern###
 
@@ -108,6 +144,9 @@ control_concern
 #policy vs concern
 policy_concern <- sjPlot::tab_xtab(var.row = atp_w49$policy, var.col = atp_w49$concern, title = "Policy vs Concern", show.row.prc = TRUE)
 policy_concern
+```
+
+```{r government bivariate}
 
 ####outcome=government###
 
@@ -127,6 +166,10 @@ control_government
 policy_government <- sjPlot::tab_xtab(var.row = atp_w49$policy, var.col = atp_w49$government, title = "Policy vs Government", show.row.prc = TRUE)
 policy_government
 
+```
+
+```{r benefit bivariate}
+
 ###outcome=benefit###
 
 #understand vs benefit
@@ -144,7 +187,9 @@ control_benefit
 #policy vs benefit
 policy_benefit <- sjPlot::tab_xtab(var.row = atp_w49$policy, var.col = atp_w49$benefit, title = "Policy vs Benefit", show.row.prc = TRUE)
 policy_benefit
+```
 
+```{r risk bivariate}
 
 ###outcome=risk###
 
@@ -166,10 +211,54 @@ policy_risk
 
 ```
 * Regardless of how much social media users *understand* or feel in *control* over what companies do with their data, follow *news* on privacy issues, or understand *privacy policies*, the majority of survey respondents believe there should be more government regulation of what companies can do with their customers' personal information (*government*) and that the potential risks of companies collecting data outweigh the benefits (*risk*).
+* Policy vs Risk and Policy vs Government were the only bivariate relationships that were not statistically significant. (p>0.05)
 
-## Multivariate 
-```{r}
+## Multivariate Regression Models
+Ordered Logistic Regression
+```{r ordered logit}
 
+#Ordered logistic regression 
+#does not work with outcome variable risk because it only has 2 levels
+#did not use 
 
+#outcome=benefit
+m <- polr(benefit ~ understand + control + news + policy, data = atp_w49, Hess=TRUE)
+m2 <- polr(benefit ~ ., data = atp_w49, Hess=TRUE)
+summary(m)
+summary(m2)
+
+#outcome=government
+n <- polr(government ~., data = atp_w49, Hess=TRUE)
+summary(n)
+
+#outcome=concern
+o <- polr(concern ~ understand + control + news + policy, data = atp_w49, Hess=TRUE)
+summary(o)
+
+```
+
+Multiple Logistic Regression
+```{r multiple logit}
+
+#Multiple Logistic Regression
+
+p<- glm(risk ~ understand + control + news + policy, data=atp_w49, family = binomial)
+
+summary(p)
+
+```
+
+Logistic Regression
+```{r logit reg}
+
+split <- initial_split(atp_w49, prop = .75)
+train <- training(gss_split)
+test <- testing(gss_split)
+
+atp_w49$understand <- as.factor(atp_w49$understand)
+
+model <- glm(risk ~ understand + control + news + policy + age + sex + internet+ education + income,family=binomial(link='logit'),data=train)
+
+summary(model)
 
 ```
