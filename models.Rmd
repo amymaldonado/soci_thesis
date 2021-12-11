@@ -54,6 +54,19 @@ pred_out1$index <- 1:nrow(pred_out1)
 
 ```
 
+```{r recode_gov}
+
+#recode gov
+pred_out2 <- pred_out %>%
+  dplyr::select("government")
+
+#recoding variables to binary outcomes
+pred_out2[pred_out2==2]<-0
+pred_out2[pred_out2==3]<-0
+pred_out2$index <- 1:nrow(pred_out2)
+
+```
+
 ```{r recode_all}
 
 #recoding variables to binary outcomes
@@ -64,9 +77,13 @@ pred_out[pred_out==4]<-0
 #adding index column to combine dataframes
 pred_out$index <- 1:nrow(pred_out)
 
+#combining dataframes
 pred_out<- merge(pred_out1, pred_out, by="index")%>%
-  dplyr::select(-c(risk.y))%>%
+  dplyr::select(-c(risk.y, government))%>%
   rename(`risk` = risk.x)
+
+#combining dataframes
+pred_out<- merge(pred_out2, pred_out, by="index")
 
 #return dataframe 
 pred_out
@@ -184,6 +201,9 @@ income_freq
 
 education_freq<- tab1(atp_w49$education, sort.group = "decreasing", cum.percent = TRUE, missing = FALSE)
 education_freq
+
+internet_freq<- tab1(atp_w49$internet, sort.group = "decreasing", cum.percent = TRUE, missing = FALSE)
+internet_freq
 
 ```
 * The majority of respondents believe there should be more regulation of what companies can do with their customers' personal information (*government*, 77.4%)
