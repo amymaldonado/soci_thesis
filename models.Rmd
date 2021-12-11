@@ -7,6 +7,7 @@ output: github_document
 ## Libraries & Packages
 Install these packages and load these libraries in order to run the rest of the code.
 ```{r setup, include=FALSE, echo=FALSE, warning=FALSE}
+
 knitr::opts_chunk$set(echo = TRUE)
 #If you have never used these libraries before make sure to install the packages before loading the libraries
 #install.packages("tidyverse")
@@ -19,22 +20,18 @@ library(dplyr)
 library(sjPlot)
 library(MASS)
 library(tidymodels)
+
 ```
 
 ## Loading and tidying the data
-Load the data into an object (*atp_w49*), select and rename columns (variables) of interest, recode refused (99) as a missing value (NA), reorder all variables.  
-```{r load}
+Load the predictor and outcome variables into an object (***survey***), load the sociodemographic variables into an object (***atp_w49***), rename columns (variables), recode Likert scale values to binary outcomes (0 = no, 1= yes) and refused (99) as a missing value (NA). 
+```{r load_po}
 
-atp_w49<- read_sav("ATP W49.sav")%>%
-  #selecting sociodemographic, predictor, and outcome variables 
-  dplyr::select("F_ACSWEB", "F_INCOME_RECODE", "F_EDUCCAT", "F_AGECAT", "F_SEX", "UNDERSTANDCO_W49", "PRIVACYNEWS1_W49", "CONTROLCO_W49", "PP4_W49", "CONCERNCO_W49", "GOVREGV1_W49", "BENEFITCO_W49", "POSNEGCO_W49")%>%
-  #renaming variables
-  rename(internet= F_ACSWEB,
-         income=F_INCOME_RECODE,
-         education=F_EDUCCAT,
-         age=F_AGECAT,
-         sex=F_SEX,
-         understand=UNDERSTANDCO_W49,
+pred_out <- read_sav("ATP W49.sav")%>%
+  #selecting predictor, and outcome variables 
+  dplyr::select("UNDERSTANDCO_W49", "PRIVACYNEWS1_W49", "CONTROLCO_W49", "PP4_W49", "CONCERNCO_W49", "GOVREGV1_W49", "BENEFITCO_W49", "POSNEGCO_W49")%>%
+  #renaming 
+  rename(understand=UNDERSTANDCO_W49,
          news=PRIVACYNEWS1_W49,
          control=CONTROLCO_W49,
          policy=PP4_W49,
@@ -42,10 +39,79 @@ atp_w49<- read_sav("ATP W49.sav")%>%
          government=GOVREGV1_W49,
          benefit=BENEFITCO_W49,
          risk=POSNEGCO_W49)
+```
 
-#recoding variables from 99 to NA
+```{r recode_risk}
+
+#recode risk
+pred_out1 <- pred_out %>%
+  dplyr::select("risk")
+
+#recoding variables to binary outcomes
+pred_out1[pred_out1==1]<-0
+pred_out1[pred_out1==2]<-1
+pred_out1$index <- 1:nrow(pred_out1)
+
+```
+
+```{r recode_all}
+
+#recoding variables to binary outcomes
+pred_out[pred_out==2]<-1
+pred_out[pred_out==3]<-0
+pred_out[pred_out==4]<-0
+
+#adding index column to combine dataframes
+pred_out$index <- 1:nrow(pred_out)
+
+pred_out<- merge(pred_out1, pred_out, by="index")%>%
+  dplyr::select(-c(risk.y))%>%
+  rename(`risk` = risk.x)
+
+#return dataframe 
+pred_out
+
+```
+
+
+```{r load_s}
+
+socio <- read_sav("ATP W49.sav")%>%
+  #selecting sociodemographic variables 
+  dplyr::select("F_ACSWEB", "F_INCOME_RECODE", "F_EDUCCAT", "F_AGECAT", "F_SEX")%>%
+  #renaming variables
+  rename(internet= F_ACSWEB,
+         income=F_INCOME_RECODE,
+         education=F_EDUCCAT,
+         age=F_AGECAT,
+         sex=F_SEX)
+
+#adding index column to join with "survey"
+socio$index <- 1:nrow(socio)
+
+#returning dataframe
+socio
+
+```
+
+```{r final_df}
+
+#joining both dataframes
+atp_w49 <- merge(socio, pred_out, by="index")%>%
+  dplyr::select(-c(index))
+
+#recoding "refused" variables from 99 to NA
 atp_w49[atp_w49==99]<-NA
+
+#return final dataframe
 atp_w49
+
+```
+
+
+```{r ordered_v}
+
+#ordering variables for regression models later
 
 #predictor/independent
 atp_w49$understand <- as.ordered(atp_w49$understand)
@@ -69,8 +135,8 @@ atp_w49$internet <- as.ordered(atp_w49$internet) #bi
 ```
 
 ## Univariate Descriptive Statistics
-Predictor and outcome variables' frequencies in the dataset.
-```{r predictor univariate}
+Frequencies of predictor, outcome, and sociodemographic variables in the dataset.
+```{r predictor_univariate}
 
 #predictor variables
 understand_freq<- tab1(atp_w49$understand, sort.group = "decreasing", cum.percent = TRUE, missing = FALSE)
@@ -89,7 +155,7 @@ policy_freq
 * Almost half of survey respondents said they know very little about what the companies are doing with the data they collect. (*understand*, 48.8%)
 * A little over half of survey respondents say they think they have very little control over the data companies collect about them. (*control*, 53.1%)
 
-```{r outcome univariate}
+```{r outcome_univariate}
 #outcome variables
 concern_freq<- tab1(atp_w49$concern, sort.group = "decreasing", cum.percent = TRUE, missing = FALSE)
 concern_freq
@@ -104,7 +170,8 @@ risk_freq<- tab1(atp_w49$risk, sort.group = "decreasing", cum.percent = TRUE, mi
 risk_freq
 
 ```
-```{r covariate univariate}
+
+```{r covariate_univariate}
 #covariates
 age_freq<- tab1(atp_w49$age, sort.group = "decreasing", cum.percent = TRUE, missing = FALSE)
 age_freq
@@ -125,7 +192,7 @@ education_freq
 
 ## Bivariate Descriptive Statistics
 Relationships between the predictor and outcome variables in the dataset.
-```{r concern bivariate}
+```{r concern_bivariate}
 
 ###outcome=concern###
 
@@ -146,7 +213,7 @@ policy_concern <- sjPlot::tab_xtab(var.row = atp_w49$policy, var.col = atp_w49$c
 policy_concern
 ```
 
-```{r government bivariate}
+```{r government_bivariate}
 
 ####outcome=government###
 
@@ -168,7 +235,7 @@ policy_government
 
 ```
 
-```{r benefit bivariate}
+```{r benefit_bivariate}
 
 ###outcome=benefit###
 
@@ -189,7 +256,7 @@ policy_benefit <- sjPlot::tab_xtab(var.row = atp_w49$policy, var.col = atp_w49$b
 policy_benefit
 ```
 
-```{r risk bivariate}
+```{r risk_bivariate}
 
 ###outcome=risk###
 
@@ -214,50 +281,46 @@ policy_risk
 * Policy vs Risk and Policy vs Government were the only bivariate relationships that were not statistically significant. (p>0.05)
 
 ## Multivariate Regression Models
-Ordered Logistic Regression
-```{r ordered logit}
 
-#Ordered logistic regression 
-#does not work with outcome variable risk because it only has 2 levels
-#did not use 
-
-#outcome=benefit
-m <- polr(benefit ~ understand + control + news + policy, data = atp_w49, Hess=TRUE)
-m2 <- polr(benefit ~ ., data = atp_w49, Hess=TRUE)
-summary(m)
-summary(m2)
-
-#outcome=government
-n <- polr(government ~., data = atp_w49, Hess=TRUE)
-summary(n)
-
-#outcome=concern
-o <- polr(concern ~ understand + control + news + policy, data = atp_w49, Hess=TRUE)
-summary(o)
-
-```
-
-Multiple Logistic Regression
-```{r multiple logit}
-
-#Multiple Logistic Regression
-
-p<- glm(risk ~ understand + control + news + policy, data=atp_w49, family = binomial)
-
-summary(p)
-
-```
 
 Logistic Regression
-```{r logit reg}
 
+```{r logit_concern}
+
+#outcome=concern
 split <- initial_split(atp_w49, prop = .75)
-train <- training(gss_split)
-test <- testing(gss_split)
+train <- training(split)
+test <- testing(split)
 
-atp_w49$understand <- as.factor(atp_w49$understand)
+model <- glm(concern ~ understand + control + news + policy, data = atp_w49, family = "binomial")
 
-model <- glm(risk ~ understand + control + news + policy + age + sex + internet+ education + income,family=binomial(link='logit'),data=train)
+summary(model)
+
+```
+
+```{r logit_government}
+
+#outcome=government
+model <- glm(government ~ understand + control + news + policy, data = atp_w49, family = "binomial")
+
+summary(model)
+
+```
+
+```{r logit_benefit}
+
+#outcome=benefit
+model <- glm(benefit ~ understand + control + news + policy, data = atp_w49, family = "binomial")
+
+summary(model)
+
+```
+
+
+```{r logit_risk}
+
+#outcome=risk
+model <- glm(risk ~ understand + control + news + policy, data = atp_w49, family = "binomial")
 
 summary(model)
 
