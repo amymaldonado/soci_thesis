@@ -363,7 +363,7 @@ summary(model)
 
 ```{r logit_control_benefit}
 
-#outcome=benefit w/ control
+#outcome=benefit w/ controls
 model <- glm(benefit ~ sex + education + income + education + internet + understand + control + news + policy, data = atp_w49, family = "binomial")
 
 summary(model)
