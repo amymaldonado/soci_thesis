@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 #install.packages("tidyverse")
 #install.packages("epiDisplay")
 #install.packages("sjPlot")
+#install.packages("tidymodels")
 library(tidyverse)
 library(haven)
 library(epiDisplay)
@@ -308,10 +309,6 @@ Logistic Regression
 ```{r logit_concern}
 
 #outcome=concern
-split <- initial_split(atp_w49, prop = .75)
-train <- training(split)
-test <- testing(split)
-
 model <- glm(concern ~ understand + control + news + policy, data = atp_w49, family = "binomial")
 
 summary(model)
@@ -341,6 +338,42 @@ summary(model)
 
 #outcome=risk
 model <- glm(risk ~ understand + control + news + policy, data = atp_w49, family = "binomial")
+
+summary(model)
+
+```
+
+```{r logit_control_concern}
+
+#outcome=concern w/ control
+model <- glm(concern ~ sex + education + income + education + internet + understand + control + news + policy, data = atp_w49, family = "binomial")
+
+summary(model)
+
+```
+
+```{r logit_control_government}
+
+#outcome=government w/ control
+model <- glm(government ~ sex + education + income + education + internet + understand + control + news + policy, data = atp_w49, family = "binomial")
+
+summary(model)
+
+```
+
+```{r logit_control_benefit}
+
+#outcome=benefit w/ control
+model <- glm(benefit ~ sex + education + income + education + internet + understand + control + news + policy, data = atp_w49, family = "binomial")
+
+summary(model)
+
+```
+
+```{r logit_control_risk}
+
+#outcome=risk w/ control
+model <- glm(risk ~ sex + education + income + education + internet + understand + control + news + policy, data = atp_w49, family = "binomial")
 
 summary(model)
 
